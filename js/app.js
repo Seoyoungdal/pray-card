@@ -3,7 +3,7 @@
  * Version 1.0.0
  */
 
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.5.1';
 const STORAGE_KEY = 'prayer-card-data';
 // 원격 버전 확인용 (GitHub Pages에 version.json을 올려두면 동작)
 const VERSION_CHECK_URL = './version.json';
@@ -60,8 +60,8 @@ let state = {
   settings: {}
 };
 
-// 세션 동안 비밀기도 잠금 해제 여부
-let secretUnlocked = false;
+// 현재 열린 상세 카드에 한해서만 인증 유지 (닫으면 다시 요청)
+let secretAuthForId = null;
 
 // ---------- Utils ----------
 function todayStr() {
@@ -656,8 +656,12 @@ async function ensurePinForSecret() {
   });
 }
 
+function canUseWebAuthn() {
+  return !!(window.PublicKeyCredential && window.isSecureContext && location.protocol === 'https:');
+}
+
 async function tryBiometricUnlock() {
-  if (!window.PublicKeyCredential || !state.webauthnCredentialId) return false;
+  if (!canUseWebAuthn() || !state.webauthnCredentialId) return false;
   try {
     const credId = Uint8Array.from(atob(state.webauthnCredentialId), c => c.charCodeAt(0));
     const challenge = new Uint8Array(32);
@@ -666,6 +670,7 @@ async function tryBiometricUnlock() {
       publicKey: {
         challenge,
         timeout: 60000,
+        rpId: location.hostname,
         userVerification: 'required',
         allowCredentials: [{
           type: 'public-key',
@@ -682,10 +687,16 @@ async function tryBiometricUnlock() {
 }
 
 async function registerBiometric() {
-  if (!window.PublicKeyCredential) return false;
+  if (!canUseWebAuthn()) {
+    toast('생체인식은 HTTPS(깃허브 주소)에서만 사용할 수 있습니다');
+    return false;
+  }
   try {
     const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-    if (!available) return false;
+    if (!available) {
+      toast('이 기기는 생체인식을 지원하지 않습니다');
+      return false;
+    }
     const challenge = new Uint8Array(32);
     crypto.getRandomValues(challenge);
     const userId = new Uint8Array(16);
@@ -693,11 +704,11 @@ async function registerBiometric() {
     const cred = await navigator.credentials.create({
       publicKey: {
         challenge,
-        rp: { name: '기도카드', id: location.hostname || 'localhost' },
+        rp: { name: '기도카드', id: location.hostname },
         user: {
           id: userId,
-          name: 'prayer-card-user',
-          displayName: '기도카드'
+          name: 'prayer-card-secret',
+          displayName: '기도카드 비밀기도'
         },
         pubKeyCredParams: [
           { type: 'public-key', alg: -7 },
@@ -708,7 +719,7 @@ async function registerBiometric() {
           userVerification: 'required',
           residentKey: 'preferred'
         },
-        timeout: 60000
+        timeout: 90000
       }
     });
     if (cred && cred.rawId) {
@@ -718,31 +729,38 @@ async function registerBiometric() {
     }
   } catch (e) {
     console.log('biometric register failed', e);
+    toast('생체인식 등록이 취소되었거나 실패했습니다');
   }
   return false;
 }
 
-async function unlockSecret() {
-  if (secretUnlocked) return true;
+// prayerId: 인증 성공 시 이 카드에 한해 상세 모달이 열려 있는 동안만 유지
+async function unlockSecret(prayerId) {
+  // 같은 카드를 상세에서 다시 그리는 경우만 통과 (응답 추가 등)
+  if (prayerId && secretAuthForId === prayerId) return true;
 
-  // 1) 생체인식 먼저 시도
-  if (state.webauthnCredentialId) {
+  // 생체인식 등록되어 있으면 먼저 시도
+  if (state.webauthnCredentialId && canUseWebAuthn()) {
     const bioOk = await tryBiometricUnlock();
     if (bioOk) {
-      secretUnlocked = true;
+      if (prayerId) secretAuthForId = prayerId;
       toast('생체인식으로 잠금 해제됨');
       return true;
     }
   }
 
-  // 2) 비밀번호
+  // 비밀번호 입력
   return new Promise((resolve) => {
     const modal = document.getElementById('modal-pin-unlock');
     document.getElementById('input-pin-unlock').value = '';
-    // 생체 버튼 표시
     const bioBtn = document.getElementById('btn-pin-biometric');
+    const regBtn = document.getElementById('btn-pin-register-bio');
     if (bioBtn) {
-      bioBtn.style.display = state.webauthnCredentialId ? '' : 'none';
+      bioBtn.style.display = (state.webauthnCredentialId && canUseWebAuthn()) ? '' : 'none';
+    }
+    if (regBtn) {
+      // 등록 안 됐고 HTTPS면 등록 버튼 표시
+      regBtn.style.display = (!state.webauthnCredentialId && canUseWebAuthn()) ? '' : 'none';
     }
     modal.classList.add('open');
     const okBtn = document.getElementById('btn-pin-unlock');
@@ -751,13 +769,14 @@ async function unlockSecret() {
       okBtn.removeEventListener('click', onOk);
       cancelBtn.removeEventListener('click', onCancel);
       if (bioBtn) bioBtn.removeEventListener('click', onBio);
+      if (regBtn) regBtn.removeEventListener('click', onReg);
       modal.classList.remove('open');
       resolve(ok);
     };
     const onOk = () => {
       const pin = document.getElementById('input-pin-unlock').value;
       if (pin === state.appPin) {
-        secretUnlocked = true;
+        if (prayerId) secretAuthForId = prayerId;
         handler(true);
       } else {
         toast('비밀번호가 틀렸습니다');
@@ -767,15 +786,30 @@ async function unlockSecret() {
     const onBio = async () => {
       const bioOk = await tryBiometricUnlock();
       if (bioOk) {
-        secretUnlocked = true;
+        if (prayerId) secretAuthForId = prayerId;
         handler(true);
       } else {
         toast('생체인식에 실패했습니다. 비밀번호를 입력하세요.');
       }
     };
+    const onReg = async () => {
+      // 먼저 비번 확인 후 등록
+      const pin = document.getElementById('input-pin-unlock').value;
+      if (pin !== state.appPin) {
+        toast('생체인식 등록 전 비밀번호를 먼저 입력하세요');
+        return;
+      }
+      const ok = await registerBiometric();
+      if (ok) {
+        toast('생체인식이 등록되었습니다. 다음부터 Face ID를 사용할 수 있습니다');
+        if (bioBtn) bioBtn.style.display = '';
+        if (regBtn) regBtn.style.display = 'none';
+      }
+    };
     okBtn.addEventListener('click', onOk);
     cancelBtn.addEventListener('click', onCancel);
     if (bioBtn) bioBtn.addEventListener('click', onBio);
+    if (regBtn) regBtn.addEventListener('click', onReg);
     setTimeout(() => document.getElementById('input-pin-unlock').focus(), 200);
   });
 }
@@ -844,7 +878,7 @@ async function openDetailModal(id) {
   if (!p) return;
 
   if (p.isSecret) {
-    const ok = await unlockSecret();
+    const ok = await unlockSecret(id);
     if (!ok) return;
   }
 
@@ -886,6 +920,8 @@ async function openDetailModal(id) {
 
 function closeDetailModal() {
   document.getElementById('modal-detail').classList.remove('open');
+  // 상세 카드를 닫으면 비밀기도 인증도 초기 (다음에 다시 요청)
+  secretAuthForId = null;
 }
 
 function detailConfirm() {
