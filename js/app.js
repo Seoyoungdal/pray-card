@@ -3,7 +3,7 @@
  * Version 1.0.0
  */
 
-const APP_VERSION = '1.5.1';
+const APP_VERSION = '1.5.2';
 const STORAGE_KEY = 'prayer-card-data';
 // 원격 버전 확인용 (GitHub Pages에 version.json을 올려두면 동작)
 const VERSION_CHECK_URL = './version.json';
@@ -913,6 +913,14 @@ async function openDetailModal(id) {
     archiveBtn.textContent = '보관함으로 보내기';
   }
 
+  // 완료 버튼 텍스트 (토글)
+  const confirmBtn = document.getElementById('btn-detail-confirm');
+  if (p.completedToday) {
+    confirmBtn.textContent = '↩ 오늘의 기도로 되돌리기';
+  } else {
+    confirmBtn.textContent = '✓ 오늘 기도 완료';
+  }
+
   const modal = document.getElementById('modal-detail');
   modal.dataset.prayerId = id;
   modal.classList.add('open');
@@ -928,10 +936,10 @@ function detailConfirm() {
   const id = document.getElementById('modal-detail').dataset.prayerId;
   const p = state.prayers.find(x => x.id === id);
   if (p) {
-    p.completedToday = true;
+    p.completedToday = !p.completedToday;
     save();
     renderPrayers();
-    toast('오늘 기도 완료로 이동했습니다');
+    toast(p.completedToday ? '오늘 기도 완료로 이동했습니다' : '오늘의 기도로 되돌렸습니다');
   }
   closeDetailModal();
 }
