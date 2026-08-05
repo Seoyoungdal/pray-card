@@ -623,3 +623,44 @@ body {
 .bottom-nav.hidden {
   display: none;
 }
+
+/* Swipe to complete */
+.swipe-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0;
+}
+
+.swipe-action {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 90px;
+  background: var(--success);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  z-index: 0;
+}
+
+.swipe-wrap .prayer-item {
+  position: relative;
+  z-index: 1;
+  background: var(--card);
+  margin: 0;
+  touch-action: pan-y;
+}
+
+.prayer-list {
+  gap: 10px;
+}
+
+.swipe-wrap + .swipe-wrap {
+  margin-top: 0;
+}

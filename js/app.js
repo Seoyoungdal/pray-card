@@ -3,7 +3,7 @@
  * Version 1.0.0
  */
 
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.5.0';
 const STORAGE_KEY = 'prayer-card-data';
 // 원격 버전 확인용 (GitHub Pages에 version.json을 올려두면 동작)
 const VERSION_CHECK_URL = './version.json';
@@ -348,8 +348,10 @@ function renderPrayers() {
     completedList.innerHTML = done.map(p => prayerItemHtml(p, true)).join('');
   }
 
-  // 클릭하면 상세 카드 열기
-  document.querySelectorAll('.prayer-item[data-id]').forEach(el => {
+  // 스와이프 완료 + 탭하면 상세
+  bindSwipeToComplete(todayList);
+  // 완료 목록은 탭만
+  completedList.querySelectorAll('.prayer-item[data-id]').forEach(el => {
     el.addEventListener('click', () => openDetailModal(el.dataset.id));
   });
 }
@@ -361,19 +363,85 @@ function prayerItemHtml(p, isCompleted) {
   const ac = getAnswerCount(p);
   const hasAnswer = ac > 0 ? ` · 응답 ${ac}` : '';
   const secret = p.isSecret ? ' · 🔒' : '';
+  // 미완료만 스와이프 완료 가능
+  const swipeClass = isCompleted ? '' : 'swipeable';
   return `
-    <div class="prayer-item ${isCompleted ? 'completed' : ''}" data-id="${p.id}">
-      <div class="prayer-check">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
-      </div>
-      <div class="prayer-content">
-        <div class="prayer-title">${escapeHtml(displayTitle(p))}</div>
-        <div class="prayer-meta">${catName}${sched ? ' · ' + sched : ''}${hasAnswer}${secret}</div>
+    <div class="swipe-wrap" data-id="${p.id}">
+      ${isCompleted ? '' : '<div class="swipe-action">완료</div>'}
+      <div class="prayer-item ${isCompleted ? 'completed' : ''} ${swipeClass}" data-id="${p.id}">
+        <div class="prayer-check">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <div class="prayer-content">
+          <div class="prayer-title">${escapeHtml(displayTitle(p))}</div>
+          <div class="prayer-meta">${catName}${sched ? ' · ' + sched : ''}${hasAnswer}${secret}</div>
+        </div>
       </div>
     </div>
   `;
+}
+
+function bindSwipeToComplete(container) {
+  if (!container) return;
+  container.querySelectorAll('.swipe-wrap').forEach(wrap => {
+    const item = wrap.querySelector('.prayer-item.swipeable');
+    if (!item) return;
+    let startX = 0, startY = 0, dx = 0, swiping = false, opened = false;
+
+    const onStart = (e) => {
+      const t = e.touches ? e.touches[0] : e;
+      startX = t.clientX;
+      startY = t.clientY;
+      dx = 0;
+      swiping = false;
+      item.style.transition = 'none';
+    };
+    const onMove = (e) => {
+      const t = e.touches ? e.touches[0] : e;
+      const mx = t.clientX - startX;
+      const my = t.clientY - startY;
+      if (!swiping && Math.abs(mx) > 8 && Math.abs(mx) > Math.abs(my)) {
+        swiping = true;
+      }
+      if (!swiping) return;
+      if (e.cancelable) e.preventDefault();
+      // 왼쪽 스와이프만 (음수)
+      dx = Math.min(0, Math.max(mx, -100));
+      item.style.transform = `translateX(${dx}px)`;
+    };
+    const onEnd = () => {
+      item.style.transition = 'transform 0.2s ease';
+      if (dx < -60) {
+        // 완료 처리
+        item.style.transform = 'translateX(-100%)';
+        const id = wrap.dataset.id;
+        setTimeout(() => {
+          const p = state.prayers.find(x => x.id === id);
+          if (p) {
+            p.completedToday = true;
+            save();
+            renderPrayers();
+            toast('오늘 기도 완료');
+          }
+        }, 180);
+      } else {
+        item.style.transform = 'translateX(0)';
+      }
+      dx = 0;
+      swiping = false;
+    };
+
+    item.addEventListener('touchstart', onStart, { passive: true });
+    item.addEventListener('touchmove', onMove, { passive: false });
+    item.addEventListener('touchend', onEnd);
+    // 클릭은 상세 열기 (스와이프 아닐 때만)
+    item.addEventListener('click', (e) => {
+      if (Math.abs(dx) > 10) return;
+      openDetailModal(item.dataset.id);
+    });
+  });
 }
 
 function communityCategoryName(id) {
@@ -576,6 +644,10 @@ async function ensurePinForSecret() {
       state.appPin = pin;
       save();
       toast('비밀번호가 설정되었습니다');
+      // 생체인식 등록 시도
+      registerBiometric().then(ok => {
+        if (ok) toast('Face ID / 생체인식도 등록되었습니다');
+      });
       handler(true);
     };
     const onCancel = () => handler(false);
@@ -584,26 +656,101 @@ async function ensurePinForSecret() {
   });
 }
 
+async function tryBiometricUnlock() {
+  if (!window.PublicKeyCredential || !state.webauthnCredentialId) return false;
+  try {
+    const credId = Uint8Array.from(atob(state.webauthnCredentialId), c => c.charCodeAt(0));
+    const challenge = new Uint8Array(32);
+    crypto.getRandomValues(challenge);
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        timeout: 60000,
+        userVerification: 'required',
+        allowCredentials: [{
+          type: 'public-key',
+          id: credId,
+          transports: ['internal']
+        }]
+      }
+    });
+    return !!assertion;
+  } catch (e) {
+    console.log('biometric failed', e);
+    return false;
+  }
+}
+
+async function registerBiometric() {
+  if (!window.PublicKeyCredential) return false;
+  try {
+    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    if (!available) return false;
+    const challenge = new Uint8Array(32);
+    crypto.getRandomValues(challenge);
+    const userId = new Uint8Array(16);
+    crypto.getRandomValues(userId);
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        rp: { name: '기도카드', id: location.hostname || 'localhost' },
+        user: {
+          id: userId,
+          name: 'prayer-card-user',
+          displayName: '기도카드'
+        },
+        pubKeyCredParams: [
+          { type: 'public-key', alg: -7 },
+          { type: 'public-key', alg: -257 }
+        ],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          userVerification: 'required',
+          residentKey: 'preferred'
+        },
+        timeout: 60000
+      }
+    });
+    if (cred && cred.rawId) {
+      state.webauthnCredentialId = btoa(String.fromCharCode(...new Uint8Array(cred.rawId)));
+      save();
+      return true;
+    }
+  } catch (e) {
+    console.log('biometric register failed', e);
+  }
+  return false;
+}
+
 async function unlockSecret() {
   if (secretUnlocked) return true;
 
-  // 생체인식 시도 (지원되는 환경)
-  if (window.PublicKeyCredential) {
-    try {
-      // 간단한 사용자 확인 - 실제 WebAuthn 등록 없이 가능한 범위는 제한적
-      // 대신 비밀번호 입력으로 진행
-    } catch (_) {}
+  // 1) 생체인식 먼저 시도
+  if (state.webauthnCredentialId) {
+    const bioOk = await tryBiometricUnlock();
+    if (bioOk) {
+      secretUnlocked = true;
+      toast('생체인식으로 잠금 해제됨');
+      return true;
+    }
   }
 
+  // 2) 비밀번호
   return new Promise((resolve) => {
     const modal = document.getElementById('modal-pin-unlock');
     document.getElementById('input-pin-unlock').value = '';
+    // 생체 버튼 표시
+    const bioBtn = document.getElementById('btn-pin-biometric');
+    if (bioBtn) {
+      bioBtn.style.display = state.webauthnCredentialId ? '' : 'none';
+    }
     modal.classList.add('open');
     const okBtn = document.getElementById('btn-pin-unlock');
     const cancelBtn = document.getElementById('btn-pin-unlock-cancel');
     const handler = (ok) => {
       okBtn.removeEventListener('click', onOk);
       cancelBtn.removeEventListener('click', onCancel);
+      if (bioBtn) bioBtn.removeEventListener('click', onBio);
       modal.classList.remove('open');
       resolve(ok);
     };
@@ -617,8 +764,18 @@ async function unlockSecret() {
       }
     };
     const onCancel = () => handler(false);
+    const onBio = async () => {
+      const bioOk = await tryBiometricUnlock();
+      if (bioOk) {
+        secretUnlocked = true;
+        handler(true);
+      } else {
+        toast('생체인식에 실패했습니다. 비밀번호를 입력하세요.');
+      }
+    };
     okBtn.addEventListener('click', onOk);
     cancelBtn.addEventListener('click', onCancel);
+    if (bioBtn) bioBtn.addEventListener('click', onBio);
     setTimeout(() => document.getElementById('input-pin-unlock').focus(), 200);
   });
 }
