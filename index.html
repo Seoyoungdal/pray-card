@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#5B8A72" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="기도카드" />
+  <title>기도카드</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <h1 class="app-title">기도카드</h1>
+    <div class="header-actions">
+      <button class="icon-btn" id="btn-settings" title="설정" aria-label="설정">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main: Home -->
+  <main class="main" id="page-home">
+    <div class="date-display" id="today-date"></div>
+
+    <!-- 오늘의 말씀 -->
+    <section class="section" id="section-verse">
+      <div class="section-header">
+        <h2 class="section-title">✦ 오늘의 말씀</h2>
+      </div>
+      <div class="card verse-card">
+        <div class="card-body">
+          <div class="verse-label">오늘의 말씀</div>
+          <p class="verse-text" id="verse-text">말씀을 불러오는 중...</p>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:4px;">
+            <p class="verse-ref" id="verse-ref" style="margin:0;"></p>
+            <button class="btn-sm accent" id="btn-next-verse" style="flex-shrink:0;">다음 말씀 ›</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 오늘의 기도 -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">오늘의 기도</h2>
+        <span class="section-count" id="today-count">0</span>
+      </div>
+      <div class="prayer-list" id="today-prayers">
+        <div class="empty-state">아직 등록된 기도가 없습니다.<br>아래 + 버튼으로 추가해보세요.</div>
+      </div>
+    </section>
+
+    <!-- 오늘 기도 완료 -->
+    <section class="section" id="completed-section">
+      <div class="section-header">
+        <h2 class="section-title">오늘 기도 완료</h2>
+        <span class="section-count" id="completed-count">0</span>
+      </div>
+      <div class="prayer-list" id="completed-prayers"></div>
+    </section>
+
+    <!-- 공동체 기도 -->
+    <section class="section" id="section-community">
+      <div class="section-header">
+        <h2 class="section-title">공동체 기도</h2>
+        <span class="section-count" id="community-count">0</span>
+      </div>
+      <div class="community-actions">
+        <button class="btn-sm accent" id="btn-add-community">+ 추가</button>
+        <button class="btn-sm" id="btn-download-community">↓ 주소에서 가져오기</button>
+        <button class="btn-sm" id="btn-import-community">파일로 가져오기</button>
+        <input type="file" id="file-community" accept=".txt,.json,.csv" hidden />
+      </div>
+      <div class="prayer-list" id="community-prayers">
+        <div class="empty-state">공동체 기도가 없습니다.<br>주소 설정 후 가져오거나 파일을 선택하세요.</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Settings Page -->
+  <main class="main page" id="page-settings">
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">설정</h2>
+      </div>
+      <div class="settings-list">
+        <!-- 표시 설정 -->
+        <div class="settings-item" style="cursor:default;">
+          <div class="settings-item-label">오늘의 말씀 표시</div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-verse" checked />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-item" style="cursor:default;">
+          <div class="settings-item-label">공동체 기도 표시</div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-community" checked />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-item" id="setting-community-url">
+          <div>
+            <div class="settings-item-label">공동체 기도 주소</div>
+            <div class="settings-item-value" id="community-url-display">설정되지 않음</div>
+          </div>
+          <span>›</span>
+        </div>
+        <div class="settings-item" id="setting-categories">
+          <div>
+            <div class="settings-item-label">기도 카테고리 관리</div>
+            <div class="settings-item-value">추가 / 수정</div>
+          </div>
+          <span>›</span>
+        </div>
+        <div class="settings-item" id="setting-bible">
+          <div>
+            <div class="settings-item-label">성경 업로드</div>
+            <div class="settings-item-value">텍스트 파일</div>
+          </div>
+          <span>›</span>
+        </div>
+        <div class="settings-item" id="setting-export">
+          <div>
+            <div class="settings-item-label">데이터 내보내기</div>
+            <div class="settings-item-value">백업 파일 저장</div>
+          </div>
+          <span>›</span>
+        </div>
+        <div class="settings-item" id="setting-import">
+          <div>
+            <div class="settings-item-label">데이터 가져오기</div>
+            <div class="settings-item-value">백업 파일 불러오기</div>
+          </div>
+          <span>›</span>
+        </div>
+        <input type="file" id="file-import" accept=".json,application/json" hidden />
+        <div class="settings-item" id="setting-version" style="cursor:pointer;">
+          <div>
+            <div class="settings-item-label">버전</div>
+            <div class="settings-item-value">탭하여 업데이트 확인</div>
+          </div>
+          <span class="version-badge" id="app-version">1.4.0</span>
+        </div>
+      </div>
+
+      <!-- 파일 형식 안내 -->
+      <div style="margin-top:28px; padding:16px; background:var(--accent-soft); border-radius:12px; font-size:0.85rem; line-height:1.6;">
+        <div style="font-weight:600; margin-bottom:8px; color:var(--accent);">파일 형식 안내</div>
+        
+        <div style="margin-bottom:12px;">
+          <strong>공동체 기도 파일</strong> (.txt 권장)<br>
+          한 줄에 하나의 기도 제목<br>
+          <code style="font-size:0.8rem;">신광교회 성도들을 위해</code><br>
+          내용이 있으면 <code style="font-size:0.8rem;">제목 | 내용</code> 형식
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <strong>성경 파일</strong> (.txt)<br>
+          <code style="font-size:0.8rem;">말씀 내용 | 성경 구절</code><br>
+          예: <code style="font-size:0.78rem;">항상 기뻐하라... | 데살로니가전서 5:16-18</code>
+        </div>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+          <a href="data/sample-community.txt" download="sample-community.txt" class="btn-sm accent">공동체 기도 샘플 ↓</a>
+          <a href="data/sample-bible.txt" download="sample-bible.txt" class="btn-sm accent">성경 샘플 ↓</a>
+        </div>
+      </div>
+      <div style="margin-top: 24px;">
+        <button class="btn btn-secondary" id="btn-back-home" style="width:100%">← 홈으로</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Main: 전체 기도 -->
+  <main class="main page" id="page-all" style="display:none;">
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">전체 기도</h2>
+        <span class="section-count" id="all-count">0</span>
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <input type="search" class="form-input" id="search-all" placeholder="제목, 내용, 응답 검색..." />
+      </div>
+      <div class="prayer-list" id="all-prayers"></div>
+    </section>
+  </main>
+
+  <!-- Main: 보관함 -->
+  <main class="main page" id="page-archive" style="display:none;">
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">보관함</h2>
+        <span class="section-count" id="archive-count">0</span>
+      </div>
+      <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:12px; padding:0 4px;">
+        응답 메모가 있거나, 기간/날짜가 지난 기도가 여기에 표시됩니다.
+      </p>
+      <div class="form-group" style="margin-bottom:14px;">
+        <input type="search" class="form-input" id="search-archive" placeholder="보관함 검색..." />
+      </div>
+      <div class="prayer-list" id="archive-prayers"></div>
+    </section>
+  </main>
+
+  <!-- FAB -->
+  <button class="fab" id="btn-add-prayer" title="기도 추가" aria-label="기도 추가">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  </button>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="nav-item active" data-page="home" id="nav-home">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>홈</span>
+    </button>
+    <button class="nav-item" data-page="all" id="nav-all">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>전체</span>
+    </button>
+    <button class="nav-item" data-page="archive" id="nav-archive">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+      <span>보관함</span>
+    </button>
+  </nav>
+
+  <!-- Add/Edit Prayer Modal -->
+  <div class="modal-overlay" id="modal-prayer">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3 class="modal-title" id="modal-prayer-title">기도 추가</h3>
+      <div class="form-group">
+        <label class="form-label">제목</label>
+        <input type="text" class="form-input" id="input-prayer-title" placeholder="기도 제목을 입력하세요" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">카테고리</label>
+        <select class="form-select" id="input-prayer-category"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">내용 (선택)</label>
+        <textarea class="form-textarea" id="input-prayer-content" placeholder="자세한 기도 내용"></textarea>
+      </div>
+      <div class="form-group" style="display:flex; align-items:center; justify-content:space-between;">
+        <label class="form-label" style="margin:0;">🔒 비밀기도</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="input-is-secret" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label class="form-label">기도 일정</label>
+        <select class="form-select" id="input-schedule-type">
+          <option value="daily">매일</option>
+          <option value="date">특정 날짜</option>
+          <option value="range">기간 지정</option>
+          <option value="weekdays">요일 지정</option>
+        </select>
+      </div>
+      <div class="form-group" id="schedule-date-group" style="display:none;">
+        <label class="form-label">날짜</label>
+        <input type="date" class="form-input" id="input-schedule-date" />
+      </div>
+      <div class="form-group" id="schedule-range-group" style="display:none;">
+        <label class="form-label">시작일</label>
+        <input type="date" class="form-input" id="input-schedule-start" style="margin-bottom:8px;" />
+        <label class="form-label">종료일</label>
+        <input type="date" class="form-input" id="input-schedule-end" />
+      </div>
+      <div class="form-group" id="schedule-weekdays-group" style="display:none;">
+        <label class="form-label">요일 선택</label>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.9rem;"><input type="checkbox" class="weekday-check" value="0"> 일</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.9rem;"><input type="checkbox" class="weekday-check" value="1"> 월</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.9rem;"><input type="checkbox" class="weekday-check" value="2"> 화</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.9rem;"><input type="checkbox" class="weekday-check" value="3"> 수</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.9rem;"><input type="checkbox" class="weekday-check" value="4"> 목</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.9rem;"><input type="checkbox" class="weekday-check" value="5"> 금</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.9rem;"><input type="checkbox" class="weekday-check" value="6"> 토</label>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="btn-cancel-prayer">취소</button>
+        <button class="btn btn-primary" id="btn-save-prayer">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 기도 상세 카드 Modal -->
+  <div class="modal-overlay" id="modal-detail">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3 class="modal-title" id="detail-title">기도 제목</h3>
+      <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+        <span class="section-count" id="detail-category">카테고리</span>
+        <span class="section-count" id="detail-schedule">일정</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">기도 내용</label>
+        <div id="detail-content" style="background:var(--bg); padding:14px; border-radius:12px; min-height:60px; white-space:pre-wrap; line-height:1.6;"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">기도 응답 기록</label>
+        <div id="detail-answer-list" style="margin-bottom:10px;"></div>
+        <div style="display:flex; gap:8px;">
+          <input type="text" class="form-input" id="input-new-answer" placeholder="새 응답 기록 추가..." style="flex:1;" />
+          <button class="btn btn-primary" id="btn-add-answer" style="flex:0; padding:12px 16px;">추가</button>
+        </div>
+      </div>
+      <div class="btn-row" style="flex-wrap:wrap;">
+        <button class="btn btn-primary" id="btn-detail-confirm" style="flex:1 1 100%;">✓ 오늘 기도 완료</button>
+        <button class="btn btn-secondary" id="btn-detail-archive" style="flex:1 1 100%;">보관함으로 보내기</button>
+        <button class="btn btn-secondary" id="btn-detail-edit" style="flex:1;">수정</button>
+        <button class="btn btn-secondary" id="btn-detail-delete" style="flex:1; color:#c45;">삭제</button>
+        <button class="btn btn-secondary" id="btn-detail-close" style="flex:1;">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIN 설정 모달 -->
+  <div class="modal-overlay" id="modal-pin-setup">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3 class="modal-title">비밀기도 비밀번호 설정</h3>
+      <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:16px;">비밀기도를 보려면 비밀번호가 필요합니다. 4자 이상 입력해주세요.</p>
+      <div class="form-group">
+        <label class="form-label">비밀번호</label>
+        <input type="password" class="form-input" id="input-pin-setup" placeholder="4자 이상" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">비밀번호 확인</label>
+        <input type="password" class="form-input" id="input-pin-setup2" placeholder="다시 입력" />
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="btn-pin-setup-cancel">취소</button>
+        <button class="btn btn-primary" id="btn-pin-setup-save">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIN 잠금해제 모달 -->
+  <div class="modal-overlay" id="modal-pin-unlock">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3 class="modal-title">🔒 비밀기도 잠금 해제</h3>
+      <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:16px;">비밀번호를 입력하세요.</p>
+      <div class="form-group">
+        <input type="password" class="form-input" id="input-pin-unlock" placeholder="비밀번호" />
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="btn-pin-unlock-cancel">취소</button>
+        <button class="btn btn-primary" id="btn-pin-unlock">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Community URL Modal -->
+  <div class="modal-overlay" id="modal-url">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3 class="modal-title">공동체 기도 주소 설정</h3>
+      <div class="form-group">
+        <label class="form-label">URL 주소</label>
+        <input type="url" class="form-input" id="input-community-url" placeholder="https://example.com/prayers.txt" />
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:16px;">
+        텍스트 파일 또는 JSON 주소를 입력하세요. 한 줄에 하나의 기도 제목으로 작성된 파일을 권장합니다.
+      </p>
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="btn-cancel-url">취소</button>
+        <button class="btn btn-primary" id="btn-save-url">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Categories Modal -->
+  <div class="modal-overlay" id="modal-categories">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3 class="modal-title">카테고리 관리</h3>
+      <div id="category-list" style="margin-bottom:16px;"></div>
+      <div class="form-group">
+        <label class="form-label">새 카테고리</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" class="form-input" id="input-new-category" placeholder="카테고리 이름" style="flex:1;" />
+          <button class="btn btn-primary" id="btn-add-category" style="flex:0;padding:12px 18px;">추가</button>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="btn-close-categories" style="width:100%">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 공동체 기도 추가/수정 Modal -->
+  <div class="modal-overlay" id="modal-community">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3 class="modal-title" id="modal-community-title">공동체 기도 추가</h3>
+      <div class="form-group">
+        <label class="form-label">제목</label>
+        <input type="text" class="form-input" id="input-community-title" placeholder="기도 제목" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">구분</label>
+        <select class="form-select" id="input-community-category"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">내용 (선택)</label>
+        <textarea class="form-textarea" id="input-community-content" placeholder="자세한 내용"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">일정</label>
+        <select class="form-select" id="input-c-schedule-type">
+          <option value="daily">매일</option>
+          <option value="date">특정 날짜</option>
+          <option value="range">기간 지정</option>
+          <option value="weekdays">요일 지정</option>
+        </select>
+      </div>
+      <div class="form-group" id="c-schedule-date-group" style="display:none;">
+        <label class="form-label">날짜</label>
+        <input type="date" class="form-input" id="input-c-schedule-date" />
+      </div>
+      <div class="form-group" id="c-schedule-range-group" style="display:none;">
+        <label class="form-label">시작일</label>
+        <input type="date" class="form-input" id="input-c-schedule-start" style="margin-bottom:8px;" />
+        <label class="form-label">종료일</label>
+        <input type="date" class="form-input" id="input-c-schedule-end" />
+      </div>
+      <div class="form-group" id="c-schedule-weekdays-group" style="display:none;">
+        <label class="form-label">요일 선택</label>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.9rem;"><input type="checkbox" class="c-weekday-check" value="0"> 일</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.9rem;"><input type="checkbox" class="c-weekday-check" value="1"> 월</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.9rem;"><input type="checkbox" class="c-weekday-check" value="2"> 화</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.9rem;"><input type="checkbox" class="c-weekday-check" value="3"> 수</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.9rem;"><input type="checkbox" class="c-weekday-check" value="4"> 목</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.9rem;"><input type="checkbox" class="c-weekday-check" value="5"> 금</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:0.9rem;"><input type="checkbox" class="c-weekday-check" value="6"> 토</label>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="btn-cancel-community">취소</button>
+        <button class="btn btn-primary" id="btn-save-community">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 공동체 기도 상세 Modal -->
+  <div class="modal-overlay" id="modal-community-detail">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3 class="modal-title" id="cdetail-title">제목</h3>
+      <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+        <span class="section-count" id="cdetail-category">구분</span>
+        <span class="section-count" id="cdetail-schedule">일정</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">내용</label>
+        <div id="cdetail-content" style="background:var(--bg); padding:14px; border-radius:12px; min-height:60px; white-space:pre-wrap; line-height:1.6;"></div>
+      </div>
+      <div class="btn-row" style="flex-wrap:wrap;">
+        <button class="btn btn-secondary" id="btn-cdetail-edit" style="flex:1;">수정</button>
+        <button class="btn btn-secondary" id="btn-cdetail-delete" style="flex:1; color:#c45;">삭제</button>
+        <button class="btn btn-secondary" id="btn-cdetail-close" style="flex:1;">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('SW registered', reg.scope))
+          .catch(err => console.log('SW failed', err));
+      });
+    }
+  </script>
+</body>
+</html>
