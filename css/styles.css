@@ -14,18 +14,18 @@
   --font: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1A1F1C;
-    --card: #252B28;
-    --text: #E8EDE9;
-    --text-secondary: #A3B0A6;
-    --accent: #7BAF94;
-    --accent-soft: #2A3530;
-    --border: #333B36;
-    --success: #7BAF94;
-    --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  }
+/* 다크모드 클래스 적용 시 변수 재정의 */
+html.dark-mode,
+body.dark-mode {
+  --bg: #121212 !important;
+  --card: #1e1e1e !important;
+  --text: #f0f0f0 !important;
+  --text-secondary: #aaaaaa !important;
+  --accent: #7BAF94 !important;
+  --accent-soft: #2A3530 !important;
+  --border: #2e2e2e !important;
+  --success: #7BAF94 !important;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
 }
 
 * {
@@ -37,8 +37,8 @@
 html, body {
   height: 100%;
   font-family: var(--font);
-  background: var(--bg);
-  color: var(--text);
+  background: var(--bg) !important;
+  color: var(--text) !important;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -160,17 +160,18 @@ body {
 }
 
 .verse-text {
-  font-size: 1.05rem;
-  line-height: 1.7;
+  font-size: 1.18rem !important;
+  line-height: 1.65 !important;
   color: var(--text);
-  font-weight: 500;
+  font-weight: 500 !important;
   margin-bottom: 12px;
 }
 
 .verse-ref {
-  font-size: 0.85rem;
+  font-size: 0.95rem !important;
   color: var(--text-secondary);
   text-align: right;
+  font-weight: 600 !important;
 }
 
 /* Prayer item */
@@ -274,7 +275,7 @@ body {
 /* Floating add button */
 .fab {
   position: fixed;
-  bottom: 24px;
+  bottom: 80px !important;
   right: 20px;
   width: 56px;
   height: 56px;
@@ -303,7 +304,7 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.5);
   z-index: 200;
   display: flex;
   align-items: flex-end;
@@ -320,6 +321,7 @@ body {
 
 .modal {
   background: var(--card);
+  color: var(--text);
   width: 100%;
   max-width: 480px;
   border-radius: 24px 24px 0 0;
@@ -346,6 +348,7 @@ body {
   font-size: 1.15rem;
   font-weight: 700;
   margin-bottom: 20px;
+  color: var(--text);
 }
 
 .form-group {
@@ -435,6 +438,7 @@ body {
 .settings-item-label {
   font-size: 0.95rem;
   font-weight: 500;
+  color: var(--text);
 }
 
 .settings-item-value {
@@ -611,56 +615,40 @@ body {
   stroke: currentColor;
 }
 
-/* FAB above bottom nav */
-.fab {
-  bottom: 80px !important;
-}
-
-.main {
-  padding-bottom: 120px !important;
-}
-
-.bottom-nav.hidden {
-  display: none;
-}
-
-/* Swipe to complete */
-.swipe-wrap {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--radius-sm);
-  margin-bottom: 0;
-}
-
-.swipe-action {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 90px;
-  background: var(--success);
-  color: white;
+.church-badge-header {
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 0.9rem;
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  z-index: 0;
+  gap: 6px;
 }
 
-.swipe-wrap .prayer-item {
-  position: relative;
-  z-index: 1;
-  background: var(--card);
-  margin: 0;
-  touch-action: pan-y;
+/* ==========================================
+   공동체 기도 상단 타이틀 스타일 (최하단 추가)
+   ========================================== */
+.community-header-title {
+    text-align: center;
+    padding: 16px 0 12px;
+    border-bottom: 2px solid var(--accent-soft);
+    margin-bottom: 16px;
 }
 
-.prayer-list {
-  gap: 10px;
+.church-sub-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    margin-bottom: 4px;
 }
 
-.swipe-wrap + .swipe-wrap {
-  margin-top: 0;
+.church-main-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
 }

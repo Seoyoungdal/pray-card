@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="기도카드" />
   <title>기도카드</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=1.5.2" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
 </head>
@@ -92,65 +92,65 @@
         <h2 class="section-title">설정</h2>
       </div>
       <div class="settings-list">
-        <!-- 표시 설정 -->
-        <div class="settings-item" style="cursor:default;">
-          <div class="settings-item-label">오늘의 말씀 표시</div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="toggle-verse" checked />
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="settings-item" style="cursor:default;">
-          <div class="settings-item-label">공동체 기도 표시</div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="toggle-community" checked />
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
+          <!-- 표시 설정 -->
+          <div class="settings-item" style="cursor:default;">
+              <div class="settings-item-label">다크 모드</div>
+              <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-darkmode" />
+                  <span class="toggle-slider"></span>
+              </label>
+          </div>
+          <div class="settings-item" style="cursor:default;">
+              <div class="settings-item-label">오늘의 말씀 표시</div>
+              <label class="toggle-switch">
+                  <input type="checkbox" id="toggle-verse" checked />
+                  <span class="toggle-slider"></span>
+              </label>
+          </div>
 
-        <div class="settings-item" id="setting-community-url">
-          <div>
-            <div class="settings-item-label">공동체 기도 주소</div>
-            <div class="settings-item-value" id="community-url-display">설정되지 않음</div>
+          <div class="settings-item" id="setting-community-url">
+              <div>
+                  <div class="settings-item-label">공동체 기도 주소</div>
+                  <div class="settings-item-value" id="community-url-display">설정되지 않음</div>
+              </div>
+              <span>›</span>
           </div>
-          <span>›</span>
-        </div>
-        <div class="settings-item" id="setting-categories">
-          <div>
-            <div class="settings-item-label">기도 카테고리 관리</div>
-            <div class="settings-item-value">추가 / 수정</div>
+          <div class="settings-item" id="setting-categories">
+              <div>
+                  <div class="settings-item-label">기도 카테고리 관리</div>
+                  <div class="settings-item-value">추가 / 수정</div>
+              </div>
+              <span>›</span>
           </div>
-          <span>›</span>
-        </div>
-        <div class="settings-item" id="setting-bible">
-          <div>
-            <div class="settings-item-label">성경 업로드</div>
-            <div class="settings-item-value">텍스트 파일</div>
+          <div class="settings-item" id="setting-bible">
+              <div>
+                  <div class="settings-item-label">성경 업로드</div>
+                  <div class="settings-item-value">텍스트 파일</div>
+              </div>
+              <span>›</span>
           </div>
-          <span>›</span>
-        </div>
-        <div class="settings-item" id="setting-export">
-          <div>
-            <div class="settings-item-label">데이터 내보내기</div>
-            <div class="settings-item-value">백업 파일 저장</div>
+          <div class="settings-item" id="setting-export">
+              <div>
+                  <div class="settings-item-label">데이터 내보내기</div>
+                  <div class="settings-item-value">백업 파일 저장</div>
+              </div>
+              <span>›</span>
           </div>
-          <span>›</span>
-        </div>
-        <div class="settings-item" id="setting-import">
-          <div>
-            <div class="settings-item-label">데이터 가져오기</div>
-            <div class="settings-item-value">백업 파일 불러오기</div>
+          <div class="settings-item" id="setting-import">
+              <div>
+                  <div class="settings-item-label">데이터 가져오기</div>
+                  <div class="settings-item-value">백업 파일 불러오기</div>
+              </div>
+              <span>›</span>
           </div>
-          <span>›</span>
-        </div>
-        <input type="file" id="file-import" accept=".json,application/json" hidden />
-        <div class="settings-item" id="setting-version" style="cursor:pointer;">
-          <div>
-            <div class="settings-item-label">버전</div>
-            <div class="settings-item-value">탭하여 업데이트 확인</div>
+          <input type="file" id="file-import" accept=".json,application/json" hidden />
+          <div class="settings-item" id="setting-version" style="cursor:pointer;">
+              <div>
+                  <div class="settings-item-label">버전</div>
+                  <div class="settings-item-value">탭하여 업데이트 확인</div>
+              </div>
+              <span class="version-badge" id="app-version">1.5.2</span>
           </div>
-          <span class="version-badge" id="app-version">1.5.2</span>
-        </div>
       </div>
 
       <!-- 파일 형식 안내 -->

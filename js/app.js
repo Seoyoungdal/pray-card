@@ -12,19 +12,7 @@ const VERSION_CHECK_URL = './version.json';
 const DEFAULT_VERSES = [
   { text: '항상 기뻐하라 쉬지 말고 기도하라 범사에 감사하라', ref: '데살로니가전서 5:16-18' },
   { text: '여호와는 나의 목자시니 내가 부족함이 없으리로다', ref: '시편 23:1' },
-  { text: '수고하고 무거운 짐 진 자들아 다 내게로 오라 내가 너희를 쉬게 하리라', ref: '마태복음 11:28' },
-  { text: '너는 마음을 다하여 여호와를 의뢰하고 네 명철을 의지하지 말라', ref: '잠언 3:5' },
-  { text: '내가 세상 끝날까지 너희와 항상 함께 있으리라', ref: '마태복음 28:20' },
-  { text: '하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그를 믿는 자마다 멸망하지 않고 영생을 얻게 하려 하심이라', ref: '요한복음 3:16' },
-  { text: '내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라', ref: '빌립보서 4:13' },
-  { text: '평안을 너희에게 끼치노니 곧 나의 평안을 너희에게 주노라', ref: '요한복음 14:27' },
-  { text: '여호와께 네 길을 맡기라 그를 의지하면 그가 이루시고', ref: '시편 37:5' },
-  { text: '두려워하지 말라 내가 너와 함께 함이라 놀라지 말라 나는 네 하나님이 됨이라', ref: '이사야 41:10' },
-  { text: '너희 염려를 다 주께 맡기라 이는 그가 너희를 돌보심이라', ref: '베드로전서 5:7' },
-  { text: '여호와를 기뻐하라 그가 네 마음의 소원을 네게 이루어 주시리로다', ref: '시편 37:4' },
-  { text: '그러므로 내일 일을 위하여 염려하지 말라 내일 일은 내일이 염려할 것이요', ref: '마태복음 6:34' },
-  { text: '서로 사랑하라 이것이 나의 계명이니라', ref: '요한복음 15:12' },
-  { text: '주 여호와는 나의 힘이시며 나의 노래시며 나의 구원이시로다', ref: '출애굽기 15:2' },
+
 ];
 
 // 기본 카테고리 (개인)
@@ -51,12 +39,14 @@ let state = {
   prayers: [],
   communityPrayers: [],
   communityUrl: '',
+  churchName: '', // 추가
+  darkMode: false, // 추가
   lastDate: '',
   bibleVerses: [],
-  verseIndex: 0,   // 오늘의 말씀 현재 인덱스
-  showVerse: true,       // 오늘의 말씀 표시 여부
-  showCommunity: true,   // 공동체 기도 표시 여부
-  appPin: '',            // 비밀기도 비밀번호 (해시 전 단순 저장 - 로컬 전용)
+  verseIndex: 0,
+  showVerse: true,
+  showCommunity: true,
+  appPin: '',
   settings: {}
 };
 
@@ -125,6 +115,9 @@ function load() {
   if (typeof state.verseIndex !== 'number') {
     state.verseIndex = 0;
   }
+
+  if (typeof state.darkMode !== 'boolean') state.darkMode = false;
+    applyTheme();
 }
 
 function toast(msg) {
@@ -455,18 +448,30 @@ function isCommunityForToday(p) {
 }
 
 function renderCommunity() {
-  const list = document.getElementById('community-prayers');
-  const count = document.getElementById('community-count');
-  const todayItems = state.communityPrayers.filter(isCommunityForToday);
-  count.textContent = todayItems.length;
+    const list = document.getElementById('community-prayers');
+    const count = document.getElementById('community-count');
+    const todayItems = state.communityPrayers.filter(isCommunityForToday);
+    count.textContent = todayItems.length;
 
-  if (todayItems.length === 0) {
-    list.innerHTML = `<div class="empty-state">오늘 해당하는 공동체 기도가 없습니다.<br>「파일로 가져오기」또는 + 로 추가하세요.</div>`;
-  } else {
-    list.innerHTML = todayItems.map(p => {
-      const cat = communityCategoryName(p.categoryId);
-      const sched = scheduleLabel(p);
-      return `
+    // TXT/설정에서 불러온 교회 이름 (예: ShinkwangChurch -> SHINKWANG CHURCH)
+    const rawChurch = state.churchName || 'ShinkwangChurch';
+    const formattedChurch = rawChurch.replace(/([a-z])([A-Z])/g, '$1 $2').toUpperCase();
+
+    // 상단 커스텀 타이틀 헤더
+    let headerHtml = `
+    <div class="community-header-title">
+      <div class="church-sub-title">${escapeHtml(formattedChurch)}</div>
+      <h2 class="church-main-title">신광교회 공동체 기도</h2>
+    </div>
+  `;
+
+    if (todayItems.length === 0) {
+        list.innerHTML = headerHtml + `<div class="empty-state">오늘 해당하는 공동체 기도가 없습니다.<br>「파일로 가져오기」또는 + 로 추가하세요.</div>`;
+    } else {
+        list.innerHTML = headerHtml + todayItems.map(p => {
+            const cat = communityCategoryName(p.categoryId);
+            const sched = scheduleLabel(p);
+            return `
         <div class="prayer-item" data-cid="${p.id}">
           <div class="prayer-content" style="padding-left:0;">
             <div class="prayer-title">${escapeHtml(p.title)}</div>
@@ -474,11 +479,12 @@ function renderCommunity() {
           </div>
         </div>
       `;
-    }).join('');
-    list.querySelectorAll('.prayer-item[data-cid]').forEach(el => {
-      el.addEventListener('click', () => openCommunityDetail(el.dataset.cid));
-    });
-  }
+        }).join('');
+
+        list.querySelectorAll('.prayer-item[data-cid]').forEach(el => {
+            el.addEventListener('click', () => openCommunityDetail(el.dataset.cid));
+        });
+    }
 }
 
 function renderCommunityCategorySelect() {
@@ -522,12 +528,34 @@ function renderCategoryList() {
   });
 }
 
+function applyTheme() {
+  if (state.darkMode) {
+    document.documentElement.classList.add('dark-mode');
+    document.body.classList.add('dark-mode');
+  } else {
+    document.documentElement.classList.remove('dark-mode');
+    document.body.classList.remove('dark-mode');
+  }
+}
+
 function renderSettings() {
   const verEl = document.getElementById('app-version');
   if (verEl) verEl.textContent = APP_VERSION;
+  
+  // 주소 표시 간략화
   const urlDisplay = document.getElementById('community-url-display');
-  if (urlDisplay) urlDisplay.textContent = state.communityUrl || '설정되지 않음';
+  if (urlDisplay) {
+    urlDisplay.textContent = state.communityUrl ? '주소 설정됨 (터치하여 변경)' : '설정되지 않음';
+  }
+  
+  // 스위치 상태 반영
+  const toggleDark = document.getElementById('toggle-darkmode');
+  if (toggleDark) {
+    toggleDark.checked = !!state.darkMode;
+  }
+
   applySectionVisibility();
+  applyTheme();
 }
 
 function escapeHtml(str) {
@@ -1036,40 +1064,70 @@ function importCommunityFile(file) {
 }
 
 function parsePrayerText(text) {
-  // JSON 시도
-  try {
-    const data = JSON.parse(text);
-    if (Array.isArray(data)) {
-      return data.map(item => {
-        if (typeof item === 'string') return { title: item, content: '', categoryName: '', scheduleType: 'daily' };
-        return {
-          title: item.title || item.name || String(item),
-          content: item.content || item.desc || '',
-          categoryName: item.category || item.categoryName || '',
-          categoryId: item.categoryId || '',
-          scheduleType: item.scheduleType || 'daily',
-          scheduleDate: item.scheduleDate || '',
-          scheduleStart: item.scheduleStart || item.start || '',
-          scheduleEnd: item.scheduleEnd || item.end || '',
-          weekdays: item.weekdays || []
-        };
+  let churchName = '';
+  const blocks = text.split(/^---$/gm);
+  const items = [];
+
+  blocks.forEach(block => {
+    const lines = block.split(/\r?\n/).map(l => l.trim());
+    let title = '', categoryName = '', scheduleType = 'daily';
+    let contentLines = [];
+    let isReadingContent = false;
+
+    lines.forEach(line => {
+      if (!line) return;
+      if (line.startsWith('# CHURCH:')) {
+        churchName = line.replace('# CHURCH:', '').trim();
+      } else if (line.startsWith('[제목]')) {
+        title = line.replace('[제목]', '').trim();
+        isReadingContent = false;
+      } else if (line.startsWith('[내용]')) {
+        const c = line.replace('[내용]', '').trim();
+        if (c) contentLines.push(c);
+        isReadingContent = true;
+      } else if (line.startsWith('[카테고리]')) {
+        categoryName = line.replace('[카테고리]', '').trim();
+        isReadingContent = false;
+      } else if (line.startsWith('[스케줄]')) {
+        const s = line.replace('[스케줄]', '').trim();
+        if (s === '매일') scheduleType = 'daily';
+        isReadingContent = false;
+      } else if (isReadingContent) {
+        contentLines.push(line);
+      }
+    });
+
+    if (title) {
+      items.push({
+        title,
+        content: contentLines.join('\n'),
+        categoryName: categoryName || '',
+        scheduleType
       });
     }
-  } catch (_) {}
-
-  // 텍스트: 제목 | 내용 | 구분 | 시작일 | 종료일
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#'));
-  return lines.map(line => {
-    const parts = line.split('|').map(p => p.trim());
-    return {
-      title: parts[0] || '',
-      content: parts[1] || '',
-      categoryName: parts[2] || '',
-      scheduleStart: parts[3] || '',
-      scheduleEnd: parts[4] || '',
-      scheduleType: (parts[3] || parts[4]) ? 'range' : 'daily'
-    };
   });
+
+  if (churchName) {
+    state.churchName = churchName;
+  }
+
+  // 구형 양식(제목 | 내용) 호환성 유지
+  if (items.length === 0) {
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+    return lines.map(line => {
+      const parts = line.split('|').map(p => p.trim());
+      return {
+        title: parts[0] || '',
+        content: parts[1] || '',
+        categoryName: parts[2] || '',
+        scheduleStart: parts[3] || '',
+        scheduleEnd: parts[4] || '',
+        scheduleType: (parts[3] || parts[4]) ? 'range' : 'daily'
+      };
+    });
+  }
+
+  return items;
 }
 
 function resolveCommunityCategory(item) {
@@ -1088,32 +1146,31 @@ function resolveCommunityCategory(item) {
 }
 
 function mergeCommunity(imported) {
-  let added = 0;
-  imported.forEach(item => {
-    if (!item.title) return;
-    const exists = state.communityPrayers.some(p =>
-      p.title.trim() === item.title.trim() &&
-      (p.content || '').trim() === (item.content || '').trim()
-    );
-    if (!exists) {
-      state.communityPrayers.push({
-        id: uid(),
-        title: item.title,
-        content: item.content || '',
-        categoryId: resolveCommunityCategory(item),
-        scheduleType: item.scheduleType || 'daily',
-        scheduleDate: item.scheduleDate || '',
-        scheduleStart: item.scheduleStart || '',
-        scheduleEnd: item.scheduleEnd || '',
-        weekdays: item.weekdays || [],
-        importedAt: todayStr()
-      });
-      added++;
-    }
-  });
-  save();
-  renderCommunity();
-  toast(added > 0 ? `${added}개의 기도를 가져왔습니다` : '새로운 기도가 없습니다 (중복 제외)');
+    // 1. 기존 공동체 기도 및 카테고리 초기화 (덮어쓰기 처리)
+    state.communityPrayers = [];
+
+    let added = 0;
+    imported.forEach(item => {
+        if (!item.title) return;
+
+        state.communityPrayers.push({
+            id: uid(),
+            title: item.title,
+            content: item.content || '',
+            categoryId: resolveCommunityCategory(item),
+            scheduleType: item.scheduleType || 'daily',
+            scheduleDate: item.scheduleDate || '',
+            scheduleStart: item.scheduleStart || '',
+            scheduleEnd: item.scheduleEnd || '',
+            weekdays: item.weekdays || [],
+            importedAt: todayStr()
+        });
+        added++;
+    });
+
+    save();
+    renderCommunity();
+    toast(added > 0 ? `${added}개의 공동체 기도를 새로 등록했습니다.` : '등록할 기도가 없습니다.');
 }
 
 // ---------- 공동체 기도 카드 ----------
@@ -1604,6 +1661,29 @@ function init() {
       if (e.target === overlay) overlay.classList.remove('open');
     });
   });
+
+// 다크모드 스위치 이벤트 (동적 연결 보장)
+  const bindDarkMode = () => {
+    const toggleDark = document.getElementById('toggle-darkmode');
+    if (toggleDark && !toggleDark.dataset.bound) {
+      toggleDark.dataset.bound = 'true';
+      toggleDark.addEventListener('change', (e) => {
+        state.darkMode = e.target.checked;
+        save();
+        applyTheme();
+        toast(state.darkMode ? '다크 모드가 적용되었습니다' : '라이트 모드가 적용되었습니다');
+      });
+    }
+  };
+
+  // 설정 이동 시에도 이벤트 연결 재확인
+  document.getElementById('btn-settings')?.addEventListener('click', () => {
+    showSettings();
+    bindDarkMode();
+  });
+
+  bindDarkMode();
+  applyTheme(); // 초기 실행 시 테마 강제 적용
 
   // 홈 표시
   showHome();
