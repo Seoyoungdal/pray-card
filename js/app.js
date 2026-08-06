@@ -1,9 +1,9 @@
 /**
  * 기도카드 PWA
- * Version 1.0.0
+ * Version 1.5.4
  */
 
-const APP_VERSION = '1.5.2';
+const APP_VERSION = '1.5.4';
 const STORAGE_KEY = 'prayer-card-data';
 // 원격 버전 확인용 (GitHub Pages에 version.json을 올려두면 동작)
 const VERSION_CHECK_URL = './version.json';
