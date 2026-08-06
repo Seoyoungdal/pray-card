@@ -1,4 +1,4 @@
-const CACHE_NAME = 'prayer-card-v1.5.2';
+const CACHE_NAME = 'prayer-card-v1.5.4';
 const ASSETS = [
   './',
   './index.html',
