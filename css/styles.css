@@ -258,6 +258,36 @@ body {
   opacity: 0.6;
 }
 
+/* 스와이프 완료 스타일 */
+.swipe-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+
+.swipe-action {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--success);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
+}
+
+.prayer-item.swipeable {
+  position: relative;
+  background: var(--card);
+  z-index: 1;
+  touch-action: pan-y;
+}
+
 .empty-state {
   text-align: center;
   padding: 28px 16px;
